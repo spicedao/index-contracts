@@ -1,5 +1,5 @@
 =======
-DIA POC
+SCIFI POC
 =======
 
 What we've done so far is reproducible with the help of the file ``scripts/poc.js``
