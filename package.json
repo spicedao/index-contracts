@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ScifiToken/scifi-contracts.git"
+    "url": "git+https://github.com/spicedao/scifi-contracts.git"
   },
   "keywords": [
     "truffle",
@@ -18,9 +18,9 @@
   "author": "juan pablo capurro",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ScifiToken/scifi-contracts/issues"
+    "url": "https://github.com/spicedao/scifi-contracts/issues"
   },
-  "homepage": "https://github.com/ScifiToken/scifi-contracts/#readme",
+  "homepage": "https://github.com/spicedao/scifi-contracts/#readme",
   "dependencies": {
     "@graphprotocol/graph-ts": "^0.19.0",
     "@typescript-eslint/eslint-plugin": "^4.6.1",
