@@ -1,7 +1,6 @@
 {
   "kovan": {},
   "mainnet": {
-    "TSC": "0xa37895c1b8CE91F15dC774913fBcE9dCE8723705",
     "SCIFI": "0xfDC4a3FC36df16a78edCAf1B837d3ACAaeDB2CB4"
   }
 }
