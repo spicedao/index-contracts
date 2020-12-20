@@ -1,5 +1,7 @@
 const SET_TOKEN_DECIMALS = '1000000000000000000'
 const assert = require('assert')
+// needed because web3.utils.BN only does ints
+const BigNumber = require('bignumber.js')
 const IERC20ABI = require('../abis/weth.json')
 const constants = require('../configs/constants.json')
 
@@ -62,7 +64,9 @@ const allowTokens = async (context, amount = (10 ** 19).toString()) => {
         const contract = new web3.eth.Contract(IERC20ABI, address)
         // important: allow to the baseIssuanceModule contract
         const tx = contract.methods.approve(basicIssuanceModuleAddress, amount)
-        return tx.send({ from: myAddress, gas: await tx.estimateGas(), gasPrice })
+        const gas = constants.gas.allow || (await tx.estimateGas({ from: myAddress }))
+        console.log(`tx gas limit for allowance: ${gas.toString()}`)
+        return tx.send({ from: myAddress, gas, gasPrice })
       })
     }, Promise.resolve())
     .then(() => {
@@ -75,11 +79,14 @@ const mintSet = async (context, amount = (10 ** 16).toString()) => {
     protocol: { basicIssuanceModuleInstance },
     setTokenAddress,
     myAddress,
+    constants,
     gasPrice,
   } = context
   const tx = basicIssuanceModuleInstance.methods.issue(setTokenAddress, amount, myAddress)
+  const gas = constants.gas.mint || (await tx.estimateGas({ from: myAddress }))
+  console.log(`tx gas limit for set mint: ${gas.toString()}`)
+  const receipt = await tx.send({ from: myAddress, gas, gasPrice })
   console.log(`minted ${amount} tokens to address: ${myAddress}`)
-  const receipt = await tx.send({ from: myAddress, gas: constants.gas.mint, gasPrice })
   console.log(`gas used: ${receipt.gasUsed}`)
 }
 
@@ -95,7 +102,9 @@ const redeemSet = async (context, amount) => {
     amount = await setTokenInstance.methods.balanceOf(myAddress).call()
   }
   const tx = basicIssuanceModuleInstance.methods.redeem(setTokenAddress, amount, myAddress)
-  const receipt = await tx.send({ from: myAddress, gas: constants.gas.mint, gasPrice })
+  const gas = constants.gas.mint || (await tx.estimateGas({ from: myAddress }))
+  console.log(`tx gas limit for set redeem: ${gas.toString()}`)
+  const receipt = await tx.send({ from: myAddress, gas, gasPrice })
   console.log(`redeemed ${amount} tokens from address: ${myAddress}`)
   console.log(`gas used: ${receipt.gasUsed}`)
 }
@@ -105,6 +114,7 @@ const trade = async (context, sourceToken, sourceUnits, targetToken, minTargetUn
     network,
     setTokenInstance,
     web3,
+    constants,
     axios,
     myAddress,
     gasPrice,
@@ -126,9 +136,10 @@ const trade = async (context, sourceToken, sourceUnits, targetToken, minTargetUn
     .mul(web3.utils.toBN(minTargetUnits))
     .div(web3.utils.toBN(SET_TOKEN_DECIMALS))
     .toString()
-  const conversionRate = web3.utils.toBN(minTargetAmount).div(web3.utils.toBN(sourceAmount)).toString()
+  const conversionRate = BigNumber(minTargetAmount).div(sourceAmount).toString()
   console.log(`Total amount of ${sourceToken} to trade: ${sourceAmount} (totalSupply* sourceUnits)`)
   console.log(`Min amount of ${targetToken} expected to return: ${minTargetAmount} (totalSupply* minTargetUnits)`)
+  console.log(`worst-case-scenario conversion rate: ${conversionRate} (target/source)`)
   // if there's ever a problem with this:  https://www.npmjs.com/package/axios#query-string
   const {
     data: { data: oneInchCalldata },
@@ -146,11 +157,18 @@ const trade = async (context, sourceToken, sourceUnits, targetToken, minTargetUn
     Uint8Array.from(Buffer.from(oneInchCalldata.slice(2), 'hex')),
   )
   // 30% on top of the estimated gas
-  const gas = web3.utils
-    .toBN(await tx.estimateGas())
-    .mul(web3.utils.toBN(13))
-    .div(web3.utils.toBN(10))
+  const gas =
+    constants.gas.trade ||
+    web3.utils
+      .toBN(await tx.estimateGas({ from: myAddress }))
+      .mul(web3.utils.toBN(13))
+      .div(web3.utils.toBN(10))
+  console.log(`tx gas limit trade: ${gas.toString()}`)
   const receipt = await tx.send({ from: myAddress, gas, gasPrice })
+  const receiveAmount = receipt.events['ComponentExchanged'].returnValues._totalReceiveAmount
+  const sentAmount = receipt.events['ComponentExchanged'].returnValues._totalSendAmount
+  const actualConversionRate = BigNumber(receiveAmount).div(sentAmount)
+  console.log(`trade executed at conversion rate: ${actualConversionRate} (target/source)`)
   console.log(`gas used: ${receipt.gasUsed}`)
 }
 

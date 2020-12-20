@@ -1,7 +1,10 @@
 {
   "gas":{
-    "mint":"500000",
-    "initialize":"100000",
-    "mintWeth":"50000"
+    "mint":false,
+    "initialize":false,
+    "trade":false,
+    "allow":false,
+    "create":false,
+    "mintWeth":false
   }
 }

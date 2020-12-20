@@ -19,7 +19,7 @@ const {
   basicIssuanceModuleAddress,
   assetLimitHookAddress,
 } = require(PROTOCOL_CONTRACTS_FILE)[network]
-const sets = JSON.parse(fs.readFileSync(SETS_FILE,'utf8'))
+const sets = JSON.parse(fs.readFileSync(SETS_FILE, 'utf8'))
 
 const web3 = new Web3(rpcUrl)
 web3.eth.handleRevert = true

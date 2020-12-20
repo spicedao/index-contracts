@@ -16,6 +16,7 @@ const createToken = async (context, symbol, name, componentsFile) => {
     myAddress,
     sets,
     network,
+    constants,
     gasPrice,
   } = context
   const components = JSON.parse(await fspromises.readFile(componentsFile, { encoding: 'utf8' }))
@@ -28,7 +29,9 @@ const createToken = async (context, symbol, name, componentsFile) => {
     name,
     symbol,
   )
-  const receipt = await tx.send({ from: myAddress, gas: await tx.estimateGas(), gasPrice })
+  const gas = constants.gas.create || (await tx.estimateGas({ from: myAddress }))
+  console.log(`tx gas limit for set creation: ${gas.toString()}`)
+  const receipt = await tx.send({ from: myAddress, gas, gasPrice })
   const newSetAddress = receipt.events['SetTokenCreated'].returnValues['_setToken']
   console.log(`new set token address: ${newSetAddress}`)
   sets[network][symbol] = newSetAddress
@@ -44,7 +47,9 @@ const initializeTradeModule = async (
   address,
 ) => {
   const tx = tradeModuleInstance.methods.initialize(address)
-  const receipt = await tx.send({ from: myAddress, gas: constants.gas.initialize, gasPrice })
+  const gas = constants.gas.initalize || (await tx.estimateGas({ from: myAddress }))
+  console.log(`tx gas limit for trade module initialization: ${gas.toString()}`)
+  const receipt = await tx.send({ from: myAddress, gas, gasPrice })
   console.log(`initialized trade module for contract ${address}`)
   console.log(`gas used: ${receipt.gasUsed}`)
 }
@@ -52,7 +57,9 @@ const initializeTradeModule = async (
 const mintWeth = async ({ web3, myAddress, constants, gasPrice }, address, amount = (10 ** 16).toString()) => {
   const token = new web3.eth.Contract(IERC20ABI, address)
   const tx = token.methods.deposit()
-  const receipt = await tx.send({ from: myAddress, gas: constants.gas.mintWeth, value: amount, gasPrice })
+  const gas = constants.gas.mintWeth || (await tx.estimateGas({ from: myAddress, value: amount }))
+  console.log(`tx gas limit for weth mint: ${gas.toString()}`)
+  const receipt = await tx.send({ from: myAddress, gas, value: amount, gasPrice })
   console.log(`minted ${amount} WETH to address: ${myAddress}`)
   console.log(`gas used: ${receipt.gasUsed}`)
 }
@@ -62,7 +69,9 @@ const initializeIssuanceModule = async (
   address,
 ) => {
   const tx = basicIssuanceModuleInstance.methods.initialize(address, assetLimitHookAddress)
-  const receipt = await tx.send({ from: myAddress, gas: constants.gas.initialize, gasPrice })
+  const gas = constants.gas.initalize || (await tx.estimateGas({ from: myAddress }))
+  console.log(`tx gas limit for issuance module initialization: ${gas.toString()}`)
+  const receipt = await tx.send({ from: myAddress, gasPrice, gas })
   console.log(`initialized basic issuance module for contract ${address}`)
   console.log(`gas used: ${receipt.gasUsed}`)
 }
